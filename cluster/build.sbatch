@@ -14,10 +14,19 @@
 set -euo pipefail
 
 # Apptainer writes many small files while it assembles the image, so its cache
-# and temporary files live on the node's local disk. One directory per job
-# keeps concurrent builds apart.
-# ponytail: assumes about 20 GB of free local disk; add a scratch fallback if a node has less.
+# and temporary files use the node's local disk when it has room. The devel
+# base image needs about 40 GB there: its compressed layers in the cache, and
+# the unpacked root filesystem. Scratch is the fallback, which is slow but
+# large. One directory per job keeps concurrent builds apart.
+SCRATCH=${SCRATCH:-/scratch.hpc/${USER:-$(id -un)}}
 LOCAL="${TMPDIR:-/tmp}/${USER:-$(id -un)}-apptainer-${SLURM_JOB_ID:-$$}"
+mkdir -p "$LOCAL"
+AVAILABLE=$(df -Pk "$LOCAL" | awk 'NR==2 { print int($4 / 1048576) }')
+if [ "${AVAILABLE:-0}" -lt 40 ]; then
+  echo "local disk has ${AVAILABLE:-0}G, building on scratch instead (slow)" >&2
+  rm -rf "$LOCAL"
+  LOCAL="$SCRATCH/apptainer-build/${SLURM_JOB_ID:-$$}"
+fi
 export APPTAINER_CACHEDIR="$LOCAL/cache"
 export APPTAINER_TMPDIR="$LOCAL/tmp"
 mkdir -p "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR"
