@@ -14,6 +14,26 @@ Please, see the README.md file in ``genetic`` folder.
 
 Please, see the README.md file in ``baseline`` folder.
 
+### Slurm cluster
+
+The `cluster` folder runs GenSPP on a Slurm cluster inside an Apptainer image.
+The image is built from `cluster/env.def` with the versions that `genetic/requirements.txt` pins.
+Submit every job from the repository root:
+
+```bash
+mkdir -p logs
+sbatch cluster/build.sbatch                       # builds env.sif
+sbatch --array=1 cluster/run.sbatch toy --smoke   # one generation of two individuals
+sbatch cluster/run.sbatch toy                     # seeds 1 to 5, one GPU job each
+sbatch cluster/run.sbatch hatexplain              # needs GloVe, see below
+```
+
+Each array task trains one seed, and the array index is the seed.
+Results are written to `genetic/results/outputs/`.
+HateXplain reads `glove.twitter.27B.25d.txt`, which is not part of the repository.
+Set `GLOVE` to its path when it is not at `$SCRATCH/glove/glove.twitter.27B.25d.txt`.
+The partitions are `sbuild` for the build and `l40s` for training; override them with `sbatch --partition=<name>`.
+
 ## Issues
 
 Don't hesitate to file an issue if you find some bugs!
