@@ -23,6 +23,13 @@
 #
 # Results are written to `genetic/results/outputs/` as `metrics_<corpus>_<seed>.txt`
 # and `masks_<corpus>_<seed>.txt`. The smoke run writes `smoke_<corpus>_<seed>`.
+#
+# `GENSPP_PROBE` selects a variance probe arm, described in
+# `genetic/src/utils/config.py`. With an arm set, the files are named
+# `<corpus>_probe-<arm>_<seed>`, so the arms never overwrite each other or the
+# unprobed run:
+#
+#   GENSPP_PROBE=noval sbatch --array=1-20 cluster/run.sbatch toy
 
 set -euo pipefail
 
@@ -32,6 +39,7 @@ if [ "${2:-}" = "--smoke" ]; then
   SMOKE=1
 fi
 SEED=${SLURM_ARRAY_TASK_ID:-1}
+PROBE=${GENSPP_PROBE:-}
 SCRATCH=${SCRATCH:-/scratch.hpc/${USER:-$(id -un)}}
 
 if [ ! -f env.sif ]; then
@@ -55,19 +63,20 @@ cd genetic
 apptainer exec --nv \
   --bind "$PWD:$PWD" --bind "$SCRATCH:$SCRATCH" \
   --env PYTHONUNBUFFERED=1 \
-  ../env.sif python - "$CORPUS" "$SEED" "$SMOKE" <<'PY'
+  --env GENSPP_PROBE="${PROBE:-none}" \
+  ../env.sif python - "$CORPUS" "$SEED" "$SMOKE" "$PROBE" <<'PY'
 import sys
 
 import torch
 
 import train
 
-corpus, seed, smoke = sys.argv[1], int(sys.argv[2]), sys.argv[3] == "1"
-name = corpus
+corpus, seed, smoke, probe = sys.argv[1], int(sys.argv[2]), sys.argv[3] == "1", sys.argv[4]
+name = f"{corpus}_probe-{probe}" if probe else corpus
 if smoke:
     train.N_GENERATIONS = 1
     train.POPULATION_SIZE = 2
-    name = f"smoke_{corpus}"
+    name = f"smoke_{name}"
 train.set_random_seed(seed)
 metrics = train.run_training(
     corpus, name, 1, seed, torch.device("cuda"), plot_train_loss=False

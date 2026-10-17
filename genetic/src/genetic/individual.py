@@ -1,5 +1,7 @@
 import gc
 import math
+import os
+import zlib
 
 import torch
 from torch.utils.data import TensorDataset, DataLoader
@@ -239,17 +241,25 @@ class Individual:
         loss = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
+        loader = self.train_loader
+        if os.environ.get("GENSPP_PROBE") == "chromo":
+            # Probe `chromo`: the same chromosome always trains on the same
+            # batches, whenever it is evaluated. Read on the CPU, before the move.
+            generator = torch.Generator().manual_seed(zlib.crc32(self.chromosome.tobytes()))
+            loader = DataLoader(self.train_loader.dataset, batch_size=self.train_loader.batch_size,
+                                shuffle=True, generator=generator)
+
         self.model.to(self.device)
         self.model.train(True)
 
         for epoch in range(self.training_epochs):
-            self.__custom_train_step(loss, optimizer)
+            self.__custom_train_step(loss, optimizer, loader)
 
         self.model.to("cpu")
 
-    def __custom_train_step(self, loss_fn, optimizer):
+    def __custom_train_step(self, loss_fn, optimizer, loader):
 
-        for texts, masks, labels in self.train_loader:
+        for texts, masks, labels in loader:
 
             texts = texts.to(self.device)
             masks = masks.to(self.device)

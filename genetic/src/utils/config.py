@@ -8,6 +8,16 @@ from src.genetic.survival.half_elitism import HalfElitismSurvival
 
 from src.model.layers.encoder import EncoderType, EncoderBuilder
 
+# Variance probe. Each arm restores one behaviour of this release to test
+# whether it explains the low spread of GenSPP's highlight F1 on Toy:
+#   none    this release unchanged
+#   noval   predictors do not train on the validation rows
+#   chromo  a candidate's batch order is seeded by its chromosome
+#   reset   a reused model slot really resets its predictor
+PROBE = os.environ.get("GENSPP_PROBE", "none")
+if PROBE not in ("none", "noval", "chromo", "reset"):
+    raise ValueError(f"unknown GENSPP_PROBE {PROBE!r}")
+
 # Paths
 TOY_DATASET_PATHS = [os.path.join("data", "toy_dataset.pkl")]
 

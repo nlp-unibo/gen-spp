@@ -79,7 +79,17 @@ def run_training(dataset_name: str, test_name: str, workers: int, run_count: int
     labels_val = np.take(labels_train, permutation, axis=0)
     labels_val = labels_val[0:val_samples]
 
-    dataset_train = TensorDataset(torch.Tensor(x_train[0]), torch.Tensor(x_train[1]), torch.Tensor(labels_train))
+    # Probe `noval`: the validation rows are the first `val_samples` of the
+    # permutation, so the predictors train on the rest only. The split itself
+    # is unchanged, since the permutation is drawn the same way in every arm.
+    if PROBE == "noval":
+        rest = permutation[val_samples:]
+        x_fit = (np.take(x_train[0], rest, axis=0), np.take(x_train[1], rest, axis=0))
+        labels_fit = np.take(labels_train, rest, axis=0)
+    else:
+        x_fit, labels_fit = x_train, labels_train
+
+    dataset_train = TensorDataset(torch.Tensor(x_fit[0]), torch.Tensor(x_fit[1]), torch.Tensor(labels_fit))
     train_loader = DataLoader(dataset_train, batch_size=INDIVIDUAL_PARAMETERS["batch_size"], shuffle=True)
 
     dataset_val = TensorDataset(torch.Tensor(x_val[0]), torch.Tensor(x_val[1]), torch.Tensor(labels_val))

@@ -1,9 +1,22 @@
 import gc
+import os
 import time
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
 
 from typing import Type
+
+
+def _initial(state: dict) -> dict:
+    """The weights a reused slot is reset to.
+
+    `state_dict()` returns tensors that share storage with the parameters, so
+    training changes the stored copy as well and the reset restores nothing.
+    Probe `reset` stores real copies.
+    """
+    if os.environ.get("GENSPP_PROBE") == "reset":
+        return {name: tensor.detach().clone() for name, tensor in state.items()}
+    return state
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -183,9 +196,9 @@ class GeneticTrainer:
 
             pool[model] = None
             if self.train_generator_only:
-                initial_weights[model] = model.classifier.state_dict()
+                initial_weights[model] = _initial(model.classifier.state_dict())
             else:
-                initial_weights[model] = model.state_dict()
+                initial_weights[model] = _initial(model.state_dict())
 
         return pool, initial_weights
 
@@ -202,9 +215,9 @@ class GeneticTrainer:
 
         self.models_pool[model] = None
         if self.train_generator_only:
-            self.initial_weights[model] = model.classifier.state_dict()
+            self.initial_weights[model] = _initial(model.classifier.state_dict())
         else:
-            self.initial_weights[model] = model.state_dict()
+            self.initial_weights[model] = _initial(model.state_dict())
 
         return model
 
