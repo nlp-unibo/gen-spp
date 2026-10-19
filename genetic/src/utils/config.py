@@ -13,7 +13,8 @@ from src.model.layers.encoder import EncoderType, EncoderBuilder
 #   none    this release unchanged
 #   noval   predictors do not train on the validation rows
 #   chromo  a candidate's batch order is seeded by its chromosome
-#   reset   a reused model slot really resets its predictor
+#   reset   a reused model slot really resets its predictor, which the
+#           release already does on a GPU
 PROBE = os.environ.get("GENSPP_PROBE", "none")
 if PROBE not in ("none", "noval", "chromo", "reset"):
     raise ValueError(f"unknown GENSPP_PROBE {PROBE!r}")

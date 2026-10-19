@@ -10,9 +10,13 @@ from typing import Type
 def _initial(state: dict) -> dict:
     """The weights a reused slot is reset to.
 
-    `state_dict()` returns tensors that share storage with the parameters, so
+    `state_dict()` returns tensors that share storage with the parameters.
+    On a GPU this changes nothing, because each candidate trains after
+    `model.to(device)`, which gives the parameters new storage and leaves the
+    stored copy at its initial values. On a CPU, `to` keeps the storage, so
     training changes the stored copy as well and the reset restores nothing.
-    Probe `reset` stores real copies.
+    Probe `reset` stores real copies, so it differs from the release only on
+    a CPU.
     """
     if os.environ.get("GENSPP_PROBE") == "reset":
         return {name: tensor.detach().clone() for name, tensor in state.items()}
