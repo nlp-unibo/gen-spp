@@ -16,7 +16,8 @@ The code is organized as follows:
 Before running a script, make sure you address the following preliminaries:
 
 * Install requirements: ``pip install -r requirements.txt``
-* [HateXplain] Download GloVe embeddings and put them into ``embeddings`` folder.
+* Both corpora are read from ``genetic/data``, which the genetic code shares.
+* [HateXplain] Download GloVe embeddings as ``genetic/data/glove/README.md`` describes, or set ``GLOVE_DIR`` to the folder holding ``glove.twitter.27B.25d.txt``.
 * Check model configurations in ``configurations/model.py``.
 
 ## Reproducing our experiments

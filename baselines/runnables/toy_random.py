@@ -58,7 +58,7 @@ if __name__ == '__main__':
     # Config
     # -------------
 
-    data_dir = Path(__file__).parent.parent.resolve().joinpath('data')
+    data_dir = Path(__file__).parent.parent.parent.resolve().joinpath('genetic', 'data')
 
     # -------------
     seed_everything(seed=15000)

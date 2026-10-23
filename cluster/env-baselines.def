@@ -1,0 +1,35 @@
+Bootstrap: docker
+
+# The base image carries the torch version that `baselines/requirements.txt`
+# pins, built for CUDA 11.6. Its sm_86 kernels run on the L40S (sm_89), which
+# shares the compute capability major version.
+From: pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime
+
+%files
+    baselines/requirements.txt /opt/requirements.txt
+
+%post
+    # torch comes with the base image. torchtext 0.14.0 declares torch==1.13.0,
+    # which contradicts the pinned torch 1.13.1, so pip cannot resolve the file
+    # as written. torchtext is therefore installed without its dependencies,
+    # and the check below runs its compiled vocabulary operator.
+    grep -vE '^(torch|torchtext)==' /opt/requirements.txt > /opt/requirements-rest.txt
+    pip install --no-cache-dir -r /opt/requirements-rest.txt requests
+    pip install --no-cache-dir --no-deps torchtext==0.14.0
+
+    # The build fails here when a pinned package does not import.
+    python - <<'PY'
+import sys
+
+import lightning, numpy, pandas, sklearn, torch, torchmetrics, torchtext
+from torchtext.vocab import build_vocab_from_iterator
+
+build_vocab_from_iterator([["a", "b"]])
+print("python", sys.version.split()[0], "| torch", torch.__version__,
+      "| cuda", torch.version.cuda, "| lightning", lightning.__version__,
+      "| torchmetrics", torchmetrics.__version__, "| torchtext", torchtext.__version__,
+      "| numpy", numpy.__version__, "| pandas", pandas.__version__)
+PY
+
+%environment
+    export LC_ALL=C

@@ -1,12 +1,11 @@
 import logging
+import os
 from pathlib import Path
 
 import lightning as L
 import numpy as np
-import wandb
 from lightning.pytorch import seed_everything
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
-from lightning.pytorch.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchmetrics.classification.f_beta import F1Score
@@ -34,7 +33,7 @@ if __name__ == '__main__':
     if not ckpt_path.exists():
         ckpt_path.mkdir(parents=True)
 
-    data_dir = Path(__file__).parent.parent.resolve().joinpath('data')
+    data_dir = Path(__file__).parent.parent.parent.resolve().joinpath('genetic', 'data')
 
     config = GRATConfig.from_config(key=ConfigKey(dataset='hatexplain', tags={'spp', 'grat'}))
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
     collator = GloVeEmbedderCollator(name=config.embedding_name,
                                      dim=config.embedding_dim,
                                      use_pretrained_only=config.use_pretrained_only,
-                                     cache_dir=data_dir.parent.joinpath('embeddings'))
+                                     cache_dir=Path(os.environ.get('GLOVE_DIR', data_dir.joinpath('glove', 'twitter'))))
     collator.fit(df=train_df)
 
     train_data = HighlightDataset(texts=train_df.text.values,
@@ -146,17 +145,12 @@ if __name__ == '__main__':
 
         should_train = not any(seed_ckpt_path.glob('*.ckpt'))
 
-        if should_train:
-            wandb_logger = WandbLogger(project='hlext-hatexplain', name='grat')
-        else:
-            wandb_logger = None
-
         trainer = L.Trainer(**trainer_args,
                             callbacks=[EarlyStopping(monitor='val_loss', mode='min', patience=30),
                                        ModelCheckpoint(monitor='val_loss', mode='min', dirpath=seed_ckpt_path),
                                        PycharmProgressBar()],
                             deterministic=True,
-                            logger=wandb_logger
+                            logger=False
                             )
 
         if should_train:
@@ -213,8 +207,6 @@ if __name__ == '__main__':
 
         model.flush_predictions()
         model.disable_storing_predictions()
-
-        wandb.finish()
 
     # Averaging
     for split_name in ['validation', 'test']:

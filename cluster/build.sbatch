@@ -7,11 +7,15 @@
 #SBATCH --partition=sbuild
 #SBATCH --output=logs/build_%j.log
 
-# Builds `env.sif` from `cluster/env.def`. Submit from the repository root:
+# Builds `<name>.sif` from `cluster/<name>.def`, where the name defaults to
+# `env`. Submit from the repository root:
 #
-#   mkdir -p logs && sbatch cluster/build.sbatch
+#   mkdir -p logs && sbatch cluster/build.sbatch                  # GenSPP, env.sif
+#   mkdir -p logs && sbatch cluster/build.sbatch env-baselines    # baselines
 
 set -euo pipefail
+
+NAME=${1:-env}
 
 # Apptainer writes many small files while it assembles the image, so its cache
 # and temporary files use the node's local disk when it has room. The devel
@@ -39,8 +43,8 @@ trap 'rm -rf "$LOCAL"' EXIT
 # The registry sometimes resets the connection while it serves the base image,
 # so the build is attempted three times.
 for attempt in 1 2 3; do
-  if apptainer build --ignore-fakeroot-command --force env.sif cluster/env.def; then
-    echo "built $PWD/env.sif"
+  if apptainer build --ignore-fakeroot-command --force "$NAME.sif" "cluster/$NAME.def"; then
+    echo "built $PWD/$NAME.sif"
     exit 0
   fi
   echo "build failed (attempt $attempt)" >&2

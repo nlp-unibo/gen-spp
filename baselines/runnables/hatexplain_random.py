@@ -60,7 +60,7 @@ if __name__ == '__main__':
     if not ckpt_path.exists():
         ckpt_path.mkdir(parents=True)
 
-    data_dir = Path(__file__).parent.parent.resolve().joinpath('data')
+    data_dir = Path(__file__).parent.parent.parent.resolve().joinpath('genetic', 'data')
 
     # -------------
     seed_everything(seed=15000)

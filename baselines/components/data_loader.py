@@ -17,7 +17,7 @@ class ToyLoader:
             data_dir: Path
     ):
         self.data_dir = data_dir
-        self.df_dir = data_dir.joinpath('toy', 'toy_sequential_dataset_easy.pkl')
+        self.df_dir = data_dir.joinpath('toy_dataset.pkl')
 
     @cached_property
     def data(

@@ -18,7 +18,7 @@ def get_sparsity_level(df):
 
 
 if __name__ == '__main__':
-    data_dir = Path(__file__).parent.parent.resolve().joinpath('data')
+    data_dir = Path(__file__).parent.parent.parent.resolve().joinpath('genetic', 'data')
     loader = HatexplainLoader(data_dir=data_dir)
     train_df, val_df, test_df = loader.get_splits()
     get_sparsity_level(df=train_df)

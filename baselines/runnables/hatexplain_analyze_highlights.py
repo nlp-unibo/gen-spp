@@ -64,7 +64,7 @@ def get_highlight_info(
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    data_dir = Path(__file__).parent.parent.resolve().joinpath('data')
+    data_dir = Path(__file__).parent.parent.parent.resolve().joinpath('genetic', 'data')
     seed_everything(seed=15000)
 
     loader = HatexplainLoader(data_dir=data_dir)
