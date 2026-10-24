@@ -13,8 +13,13 @@ From: pytorch/pytorch:1.13.1-cuda11.6-cudnn8-runtime
     # which contradicts the pinned torch 1.13.1, so pip cannot resolve the file
     # as written. torchtext is therefore installed without its dependencies,
     # and the check below runs its compiled vocabulary operator.
+    # lightning 1.9.0 imports `lightning.app`, which needs a `lightning-cloud`
+    # it does not bound from above. 0.5.16 is the last release before
+    # lightning 1.9.0, and later ones dropped names that `lightning.app` imports.
+    # `lightning.fabric` imports `pkg_resources`, which current setuptools no
+    # longer ships, so setuptools stays below 70.
     grep -vE '^(torch|torchtext)==' /opt/requirements.txt > /opt/requirements-rest.txt
-    pip install --no-cache-dir -r /opt/requirements-rest.txt requests
+    pip install --no-cache-dir -r /opt/requirements-rest.txt requests lightning-cloud==0.5.16 "setuptools<70"
     pip install --no-cache-dir --no-deps torchtext==0.14.0
 
     # The build fails here when a pinned package does not import.
